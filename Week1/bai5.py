@@ -1,0 +1,21 @@
+from flask import Flask, jsonify, request
+from uuid import uuid4
+
+app = Flask(__name__)
+
+orders = {}
+
+# Sửa <id> thành <order_id> cho khớp với tham số bên dưới
+@app.route("/orders/<order_id>", methods=["DELETE"])
+def delete_order(order_id):
+    order = orders.get(order_id)
+    if order is None:
+        return {"error": "not found"}, 404
+    if order["status"] in ("shipped", "delivered"):
+        return {"error": "cannot delete"}, 409
+    orders.pop(order_id, None)
+
+    return "", 204
+
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8000, debug=True)
