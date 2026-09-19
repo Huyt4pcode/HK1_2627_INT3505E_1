@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 orders = {}
 
-# Sửa <id> thành <order_id> cho khớp với tham số bên dưới
+
 @app.route("/orders/<order_id>", methods=["DELETE"])
 def delete_order(order_id):
     order = orders.get(order_id)
