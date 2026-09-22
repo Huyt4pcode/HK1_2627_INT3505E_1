@@ -3,7 +3,15 @@ from flask import Flask, jsonify, make_response, request
 
 app = Flask(__name__)
 
-BOOKS = []
+BOOKS = [
+	{
+		"id": 1,
+        "title": "Python cơ bản",
+        "author": "DAO QUANG HUY",
+        "isbn": "123456",
+        "price": 100000
+	}
+]
 
 
 def find_book_index(bid):
