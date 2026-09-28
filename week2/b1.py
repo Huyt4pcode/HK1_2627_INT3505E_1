@@ -2,7 +2,13 @@ from flask import Flask, jsonify, request, make_response
 
 app = Flask(__name__)
 
-BOOKS = []
+BOOKS = [{
+        "id": 1,
+        "title": "Python cơ bản",
+        "author": "DAO QUANG HUY",
+        "isbn": "123456",
+        "price": 100000
+    }]
 _next_id = 1
 
 # ─── GET /books —— trả danh sách
