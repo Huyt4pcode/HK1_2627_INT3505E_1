@@ -1,8 +1,7 @@
 BEGIN TRANSACTION;
 CREATE TABLE books (
            id INTEGER PRIMARY KEY AUTOINCREMENT,
-           title VARCHAR(255) NOT NULL,
-           author VARCHAR(255) NOT NULL
+           payload TEXT NOT NULL
         );
 INSERT INTO "books" VALUES(1,'Modern Operating Systems (rwQP)','Randal Bryant xbG');
 INSERT INTO "books" VALUES(2,'Database Internals (twZd)','Ilya Grigorik gVw');
