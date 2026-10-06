@@ -133,10 +133,3 @@ Ví dụ:
 
 ---
 
-## 4. Gợi ý thiết kế API
-
-- Dùng tiền tố `/api/v1` để đảm bảo versioning rõ ràng.
-- Collection dùng để lấy danh sách hoặc tạo mới.
-- Item dùng để thao tác với một đối tượng cụ thể.
-- Sub-resource dùng để tách chức năng phụ thuộc vào resource gốc.
-- Việc tách rõ resource giúp API dễ mở rộng và dễ bảo trì.
