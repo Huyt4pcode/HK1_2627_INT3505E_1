@@ -1,0 +1,140 @@
+openapi: 3.0.3
+info:
+  title: Pet Store
+  version: 1.0.0
+  description: API quản lý thú cưng 
+servers:
+  - url: 'http://localhost:5000/v1'
+
+security:
+  - bearerAuth: []
+
+tags:
+
+  - name: pets
+    description: Quản lý thông tin thú cưng
+
+paths:
+  /pets:
+    get:
+      operationId: listPets 
+      tags: [pets]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: Danh sách thú cưng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pets' 
+       
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        'default':
+          $ref: '#/components/responses/DefaultError'
+
+    post:
+      operationId: createPets
+      tags: [pets]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Pet'
+      responses:
+        '201':
+          description: Tạo thú cưng thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /pets/{petId}:
+    parameters:
+      - in: path
+        name: petId
+        required: true
+        schema:
+          type: integer
+          example: 1
+    get:
+      operationId: showPetById
+      tags: [pets]
+      responses:
+        '200':
+          description: Lấy chi tiết thú cưng thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deletePet
+      tags: [pets]
+      responses:
+        '204':
+          description: Xóa thành công, không trả về body
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Pet:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "LuLu"
+        tag:
+          type: string
+          example: "dog"
+          
+  
+    Pets:
+      type: array
+      items:
+        $ref: '#/components/schemas/Pet'
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: "Không tìm thấy thông tin"
+  responses:
+    Unauthorized:
+      description: Lỗi xác thực do token không hợp lệ hoặc bị thiếu
+    NotFound:
+      description: Không tìm thấy tài nguyên
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Dữ liệu đầu vào không hợp lệ
+    DefaultError:
+      description: Lỗi hệ thống không mong đợi
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
