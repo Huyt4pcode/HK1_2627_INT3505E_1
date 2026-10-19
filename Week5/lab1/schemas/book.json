@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": ["title", "isbn", "price_vnd", "author_id", "category_id"],
+  "properties": {
+    "title": {"type": "string"},
+    "isbn": {"type": "string"},
+    "price_vnd": {"type": "integer"},
+    "stock": {"type": "integer"},
+    "author_id": {"type": "integer"},
+    "category_id": {"type": "integer"}
+  },
+  "additionalProperties": false
+}
