@@ -1,0 +1,286 @@
+openapi: 3.0.3
+info:
+  title: Social Network API
+  version: 1.0.0
+  description: |
+    OpenAPI specification for authentication and reading posts.
+    Application scopes are documented with x-required-scopes because HTTP
+    bearer authentication does not define scopes in the OpenAPI security scheme.
+servers:
+  - url: https://api.example.com/v1
+    description: Production
+
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      tags: [Authentication]
+      summary: Authenticate a user
+      description: |
+        Public endpoint; no scope is needed to call it. On success, the server
+        issues an access token with the approved scopes and a refresh token.
+        Clients may request only scopes authorized for the user and client.
+      security: []
+      x-required-scopes: []
+      x-granted-scopes:
+        - posts:read
+        - auth:refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: user@example.com
+              password: correct-horse-battery
+              requestedScopes: [posts:read, auth:refresh]
+      responses:
+        '200':
+          description: Authentication succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/InvalidCredentials'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /auth/refresh:
+    post:
+      operationId: refreshAccessToken
+      tags: [Authentication]
+      summary: Rotate an access and refresh token
+      description: |
+        The refresh token must include the auth:refresh scope. The refresh
+        token is sent in the request body, not as an access-token bearer
+        credential. A successful call rotates the refresh token; the previous
+        refresh token must no longer be accepted.
+      security: []
+      x-required-scopes:
+        - auth:refresh
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Tokens refreshed and refresh token rotated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/InvalidRefreshToken'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /posts/{id}:
+    get:
+      operationId: getPost
+      tags: [Posts]
+      summary: Get a post by ID
+      description: The access token must include the posts:read scope.
+      security:
+        - bearerAuth: []
+      x-required-scopes:
+        - posts:read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Post identifier
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Post returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/InsufficientScope'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 128
+        requestedScopes:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+            enum: [posts:read, auth:refresh]
+
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+
+    TokenPair:
+      type: object
+      additionalProperties: false
+      required: [accessToken, refreshToken, tokenType, expiresIn, scope]
+      properties:
+        accessToken:
+          type: string
+          description: Short-lived access token; never store in an insecure location.
+        refreshToken:
+          type: string
+          description: Single-use refresh token; store securely and rotate after use.
+        tokenType:
+          type: string
+          enum: [Bearer]
+        expiresIn:
+          type: integer
+          minimum: 1
+          description: Access-token lifetime in seconds.
+        scope:
+          type: string
+          description: Space-delimited scopes granted to the issued token pair.
+          example: posts:read auth:refresh
+
+    Post:
+      type: object
+      additionalProperties: false
+      required: [id, authorId, content, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        authorId:
+          type: string
+          format: uuid
+        content:
+          type: string
+          maxLength: 5000
+        createdAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      additionalProperties: false
+      required: [code, message, requestId]
+      properties:
+        code:
+          type: string
+          example: invalid_request
+        message:
+          type: string
+          description: Safe, user-facing explanation; must not contain secrets or internal details.
+        requestId:
+          type: string
+          description: Identifier for correlating the error with server-side logs.
+
+  responses:
+    BadRequest:
+      description: Malformed request or invalid identifier format
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidCredentials:
+      description: Email or password is incorrect; response does not reveal which value failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InvalidRefreshToken:
+      description: Refresh token is invalid, expired, revoked, or already used
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Access token is missing, invalid, or expired
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InsufficientScope:
+      description: Token is valid but does not have the required scope
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ValidationError:
+      description: Request fields are missing or fail validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Post does not exist or is not visible to the caller
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Rate limit exceeded; response may include a Retry-After header
+      headers:
+        Retry-After:
+          description: Seconds to wait before retrying
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Unexpected server-side failure
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
