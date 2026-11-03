@@ -6,6 +6,11 @@ info:
     OpenAPI specification for authentication and reading posts.
     Application scopes are documented with x-required-scopes because HTTP
     bearer authentication does not define scopes in the OpenAPI security scheme.
+tags:
+  - name: Authentication
+    description: Login and refresh-token operations.
+  - name: Posts
+    description: Operations for reading posts.
 servers:
   - url: https://api.example.com/v1
     description: Production
@@ -110,6 +115,10 @@ paths:
           schema:
             type: string
             format: uuid
+          examples:
+            sample:
+              summary: Example post UUID
+              value: 550e8400-e29b-41d4-a716-446655440000
       responses:
         '200':
           description: Post returned
@@ -136,6 +145,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: Bearer access token containing the scopes required by the operation.
 
   schemas:
     LoginRequest:
@@ -147,11 +157,14 @@ components:
           type: string
           format: email
           maxLength: 254
+          example: user@example.com
         password:
           type: string
           format: password
           minLength: 1
           maxLength: 128
+          writeOnly: true
+          example: correct-horse-battery
         requestedScopes:
           type: array
           uniqueItems: true
@@ -167,6 +180,7 @@ components:
         refreshToken:
           type: string
           minLength: 1
+          writeOnly: true
 
     TokenPair:
       type: object
@@ -176,16 +190,20 @@ components:
         accessToken:
           type: string
           description: Short-lived access token; never store in an insecure location.
+          writeOnly: true
         refreshToken:
           type: string
           description: Single-use refresh token; store securely and rotate after use.
+          writeOnly: true
         tokenType:
           type: string
           enum: [Bearer]
+          example: Bearer
         expiresIn:
           type: integer
           minimum: 1
           description: Access-token lifetime in seconds.
+          example: 900
         scope:
           type: string
           description: Space-delimited scopes granted to the issued token pair.
@@ -199,15 +217,19 @@ components:
         id:
           type: string
           format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
         authorId:
           type: string
           format: uuid
+          example: 7b6c1f9d-0d42-4a7a-a4e1-f3bb4a7f0a21
         content:
           type: string
           maxLength: 5000
+          example: Hello from the social network.
         createdAt:
           type: string
           format: date-time
+          example: 2026-11-03T21:00:00Z
 
     Error:
       type: object
