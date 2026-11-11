@@ -1,7 +1,7 @@
 from flask import Flask
 from .extensions import db, migrate
 from .api.products import products_bp
-from .api.errors import register_error_handlers
+from .errors import register_error_handlers
 from .api.health import health_bp
 from .config import DefaultConfig
 import os

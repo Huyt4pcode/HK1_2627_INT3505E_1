@@ -1,4 +1,5 @@
 from flask import jsonify
+from marshmallow import ValidationError
 from werkzeug.exceptions import HTTPException
 
 class ApiError(Exception):
@@ -22,6 +23,10 @@ class OutOfStock(ApiError):
     code = "out_of_stock"
 
 def register_error_handlers(app):
+    @app.errorhandler(ValidationError)
+    def _on_validation(err):
+        return jsonify({"code": "validation_error", "message": err.messages}), 422
+
     @app.errorhandler(ApiError)
     def _on_api(err):
         return jsonify({"code": err.code, "message": err.message}), err.status_code
