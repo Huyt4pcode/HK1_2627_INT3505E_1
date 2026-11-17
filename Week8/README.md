@@ -97,6 +97,7 @@ New-Item -ItemType Directory -Force reports | Out-Null
 newman run .\books-api.postman_collection.json `
   -e .\postman\local.postman_environment.json `
   -r cli,junit `
+  --timeout 10000 `
   --reporter-junit-export .\reports\junit.xml
 ```
 
