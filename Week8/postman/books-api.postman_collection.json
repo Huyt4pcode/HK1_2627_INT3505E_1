@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "Books API — Lab08 Starter",
-    "description": "Lab 3: add error-cases/ folder with POST missing title and GET missing id. Collection currently contains happy paths only.",
+    "description": "Lab 3: happy paths + error-cases/ (POST missing title, GET missing id). Newman-runnable.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -72,8 +72,13 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"201 Created\", () => pm.response.to.have.status(201));",
-                  "pm.test(\"positive id\", () => pm.expect(pm.response.json().id).to.be.above(0));",
-                  "if (pm.response.code === 201) pm.collectionVariables.set(\"book_id\", pm.response.json().id);"
+                  "const book = pm.response.json();",
+                  "pm.test(\"created book has expected fields\", () => pm.expect(book).to.have.all.keys(\"id\", \"title\", \"author\", \"year\", \"isbn\"));",
+                  "pm.test(\"positive id saved as collection variable\", () => {",
+                  "  pm.expect(book.id).to.be.above(0);",
+                  "  pm.collectionVariables.set(\"book_id\", book.id);",
+                  "  pm.expect(pm.collectionVariables.get(\"book_id\")).to.eql(book.id);",
+                  "});"
                 ]
               }
             }
@@ -102,7 +107,12 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"expected fields\", () => pm.expect(pm.response.json()).to.have.all.keys(\"id\", \"title\", \"author\", \"year\", \"isbn\"));"
+                  "pm.test(\"returned created book\", () => {",
+                  "  const book = pm.response.json();",
+                  "  pm.expect(book).to.have.all.keys(\"id\", \"title\", \"author\", \"year\", \"isbn\");",
+                  "  pm.expect(String(book.id)).to.eql(pm.collectionVariables.get(\"book_id\"));",
+                  "  pm.expect(book.title).to.eql(\"DDIA\");",
+                  "});"
                 ]
               }
             }
@@ -145,7 +155,11 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"200 OK\", () => pm.response.to.have.status(200));",
-                  "pm.test(\"updated title\", () => pm.expect(pm.response.json().title).to.eql(\"DDIA revised\"));"
+                  "pm.test(\"book was updated\", () => {",
+                  "  const book = pm.response.json();",
+                  "  pm.expect(book.title).to.eql(\"DDIA revised\");",
+                  "  pm.expect(String(book.id)).to.eql(pm.collectionVariables.get(\"book_id\"));",
+                  "});"
                 ]
               }
             }
@@ -175,6 +189,94 @@
                 "exec": [
                   "pm.test(\"204 No Content\", () => pm.response.to.have.status(204));",
                   "pm.test(\"empty body\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "error-cases",
+      "item": [
+        {
+          "name": "POST /books (missing title)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/books",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"author\": \"Kleppmann\", \"year\": 2017}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"400 Bad Request\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"error body has validation code and message\", () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.code).to.eql(\"VALIDATION_ERROR\");",
+                  "  pm.expect(body.message).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "pm.test(\"validation identifies missing title\", () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.errors.some((item) => item.field === \"title\")).to.eql(true);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET /books/9999 (not found)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/books/9999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "books",
+                "9999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 Not Found\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"error body has not-found code and message\", () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.code).to.eql(\"NOT_FOUND\");",
+                  "  pm.expect(body.message).to.eql(\"Book not found\");",
+                  "});"
                 ]
               }
             }

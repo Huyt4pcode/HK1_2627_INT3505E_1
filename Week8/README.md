@@ -82,6 +82,26 @@ newman run books-api.postman_collection.json \
 
 Lưu ý: cần chạy server trước. `data.csv` là dữ liệu ví dụ để thực hành data-driven iteration; khi sử dụng `-d data.csv`, collection sẽ lặp theo số hàng. Đừng hard-code credentials/tokens trong file đẩy lên Git.
 
+### Chạy trên Windows PowerShell
+
+Mở hai terminal tại thư mục `Week8`. Terminal thứ nhất khởi động API:
+
+```powershell
+.\.venv\Scripts\python.exe -m app --port 5000
+```
+
+Terminal thứ hai chạy collection và tạo báo cáo JUnit:
+
+```powershell
+New-Item -ItemType Directory -Force reports | Out-Null
+newman run .\books-api.postman_collection.json `
+  -e .\postman\local.postman_environment.json `
+  -r cli,junit `
+  --reporter-junit-export .\reports\junit.xml
+```
+
+Collection chạy tuần tự 5 happy-path và 2 error-path requests, không cần mở Postman UI. Newman thoát với mã lỗi nếu có assertion thất bại; báo cáo được lưu tại `reports\junit.xml`.
+
 ## 5. Lab 4 — Locust
 
 `performance/locustfile.py` là baseline có weighted tasks; `performance/locustfile_realistic.py` minh hoạ flow có state và demo login. Chạy API trong terminal 1; terminal 2:
